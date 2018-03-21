@@ -292,39 +292,17 @@ fn generic_frontward_analysis(ssa: &SSAStorage,
 #[cfg(test)]
 mod test {
     use super::*;
-    use serde_json;
-    use r2api::structs::LFunctionInfo;
-    use std::fs::File;
-    use std::io::prelude::*;
-
-    use middle::regfile::SubRegisterFile;
-    use frontend::ssaconstructor::SSAConstruct;
-    use middle::ssa::ssastorage::SSAStorage;
     use middle::dce;
 
-    use utils::test_const::{REGISTER_PROFILE, BIN_LS_INSTRUCTIONS, CT1_INSTRUCTIONS};
+    use utils::test_const::{REGISTER_PROFILE, BIN_LS_INSTRUCTIONS, CT1_INSTRUCTIONS, new_ssa};
 
     #[test]
     fn bin_ls_test() {
-        let instructions: LFunctionInfo;
-        let mut register_profile = File::open(REGISTER_PROFILE).unwrap();
-        let mut s = String::new();
-        register_profile.read_to_string(&mut s).unwrap();
-        let reg_profile = serde_json::from_str(&*s).unwrap();
-        let mut instruction_file = File::open(BIN_LS_INSTRUCTIONS).unwrap();
-        let mut s = String::new();
-        instruction_file.read_to_string(&mut s).unwrap();
-        instructions = serde_json::from_str(&*s).unwrap();
-        let mut ssa = SSAStorage::new();
-        {
-            let regfile = SubRegisterFile::new(&reg_profile);
-            let mut constructor = SSAConstruct::new(&mut ssa, &regfile);
-            constructor.run(instructions.ops.unwrap().as_slice());
-        }
+        let mut ssa = new_ssa(REGISTER_PROFILE, BIN_LS_INSTRUCTIONS);
         {
             dce::collect(&mut ssa);
         }
-        
+
         frontward_analysis(&ssa, "rsp".to_string(), "rbp".to_string());
         backward_analysis(&ssa, "rsp".to_string());
         rounded_analysis(&ssa, "rsp".to_string(), "rbp".to_string());
@@ -332,21 +310,8 @@ mod test {
 
     #[test]
     fn ct1_test() {
-        let instructions: LFunctionInfo;
-        let mut register_profile = File::open(REGISTER_PROFILE).unwrap();
-        let mut s = String::new();
-        register_profile.read_to_string(&mut s).unwrap();
-        let reg_profile = serde_json::from_str(&*s).unwrap();
-        let mut instruction_file = File::open(CT1_INSTRUCTIONS).unwrap();
-        let mut s = String::new();
-        instruction_file.read_to_string(&mut s).unwrap();
-        instructions = serde_json::from_str(&*s).unwrap();
-        let mut ssa = SSAStorage::new();
-        {
-            let regfile = SubRegisterFile::new(&reg_profile);
-            let mut constructor = SSAConstruct::new(&mut ssa, &regfile);
-            constructor.run(instructions.ops.unwrap().as_slice());
-        }
+        let mut ssa = new_ssa(REGISTER_PROFILE, CT1_INSTRUCTIONS);
+
         {
             dce::collect(&mut ssa);
         }

@@ -758,40 +758,15 @@ mod test {
     use middle::{dot, dce};
     use middle::ir_writer::IRWriter;
     use middle::ssa::ssastorage::SSAStorage;
-    use r2api::structs::{LFunctionInfo, LRegInfo};
-    use serde_json;
     use std::fs::File;
-    use std::io::prelude::*;
+    use std::io::Write;
     use super::*;
 
-    use utils::test_const::REGISTER_PROFILE;
-
-    fn before_test(reg_profile: &mut LRegInfo, instructions: &mut LFunctionInfo, from: &str) {
-        // Enable for debugging only.
-        // enable_logging!();
-        let mut register_profile = File::open(REGISTER_PROFILE).unwrap();
-        let mut s = String::new();
-        register_profile.read_to_string(&mut s).unwrap();
-        *reg_profile = serde_json::from_str(&*s).unwrap();
-        let mut instruction_file = File::open(from).unwrap();
-        let mut s = String::new();
-        instruction_file.read_to_string(&mut s).unwrap();
-        *instructions = serde_json::from_str(&*s).unwrap();
-    }
+    use utils::test_const::{REGISTER_PROFILE, new_ssa};
 
     #[test]
     fn ssa_simple_test_1() {
-        let mut reg_profile = Default::default();
-        let mut instructions = Default::default();
-        before_test(&mut reg_profile,
-                    &mut instructions,
-                    "test_files/tiny_sccp_test_instructions.json");
-        let mut ssa = SSAStorage::new();
-        {
-            let regfile = SubRegisterFile::new(&reg_profile);
-            let mut constructor = SSAConstruct::new(&mut ssa, &regfile);
-            constructor.run(instructions.ops.unwrap().as_slice());
-        }
+        let mut ssa = new_ssa(REGISTER_PROFILE, "test_files/tiny_sccp_test_instructions.json");
         {
             dce::collect(&mut ssa);
         }
@@ -802,17 +777,7 @@ mod test {
 
     #[test]
     fn ssa_const_prop_test_1() {
-        let mut reg_profile = Default::default();
-        let mut instructions = Default::default();
-        before_test(&mut reg_profile,
-                    &mut instructions,
-                    "test_files/tiny_sccp_test_instructions.json");
-        let mut ssa = SSAStorage::new();
-        {
-            let regfile = SubRegisterFile::new(&reg_profile);
-            let mut constructor = SSAConstruct::new(&mut ssa, &regfile);
-            constructor.run(instructions.ops.unwrap().as_slice());
-        }
+        let mut ssa = new_ssa(REGISTER_PROFILE, "test_files/tiny_sccp_test_instructions.json");
         {
             dce::collect(&mut ssa);
         }
@@ -831,17 +796,7 @@ mod test {
 
     #[test]
     fn ssa_bfs_walk() {
-        let mut reg_profile = Default::default();
-        let mut instructions = Default::default();
-        before_test(&mut reg_profile,
-                    &mut instructions,
-                    "test_files/tiny_sccp_test_instructions.json");
-        let mut ssa = SSAStorage::new();
-        {
-            let regfile = SubRegisterFile::new(&reg_profile);
-            let mut constructor = SSAConstruct::new(&mut ssa, &regfile);
-            constructor.run(instructions.ops.unwrap().as_slice());
-        }
+        let mut ssa = new_ssa(REGISTER_PROFILE, "test_files/tiny_sccp_test_instructions.json");
         {
             dce::collect(&mut ssa);
         }
